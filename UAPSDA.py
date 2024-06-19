@@ -1,91 +1,140 @@
-#selamat datang di kode ini
 import csv
-import tkinter as tk
-from tkinter import messagebox, simpledialog
 
-# Nama file CSV untuk menyimpan data pasien
 FILE_NAME = 'patients.csv'
 
-# Fungsi untuk menambahkan pasien baru ke dalam sistem
-def add_patient():
-    name = simpledialog.askstring("Input", "Masukkan Nama Pasien:")
-    age = simpledialog.askinteger("Input", "Masukkan Umur Pasien:")
-    gender = simpledialog.askstring("Input", "Masukkan Jenis Kelamin Pasien (L/P):")
-    
-    if name and age and gender:
-        with open(FILE_NAME, mode='a', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow([name, age, gender])
-        messagebox.showinfo("Sukses", "Pasien berhasil ditambahkan")
-    else:
-        messagebox.showerror("Error", "Semua informasi pasien harus diisi")
+class Patient:
+    def __init__(self, name, age, gender):
+        self.name = name
+        self.age = age
+        self.gender = gender
 
-# Fungsi untuk menampilkan daftar pasien yang terdaftar
-def view_patients():
-    with open(FILE_NAME, mode='r') as file:
-        reader = csv.reader(file)
-        patients = list(reader)
-    
-    view_window = tk.Toplevel(root)
-    view_window.title("Daftar Pasien")
+    def __str__(self):
+        return f"Nama: {self.name}, Umur: {self.age}, Jenis Kelamin: {self.gender}"
 
-    for i, patient in enumerate(patients):
-        tk.Label(view_window, text=f"{i+1}. Nama: {patient[0]}, Umur: {patient[1]}, Jenis Kelamin: {patient[2]}").pack()
+class HospitalManagement:
+    def __init__(self):
+        self.patients = self.load_patients()
 
-# Fungsi untuk memperbarui informasi pasien yang ada
-def update_patient():
-    patient_id = simpledialog.askinteger("Input", "Masukkan ID Pasien yang ingin diperbarui:")
-    
-    with open(FILE_NAME, mode='r') as file:
-        reader = csv.reader(file)
-        patients = list(reader)
-    
-    if 0 < patient_id <= len(patients):
-        name = simpledialog.askstring("Input", "Masukkan Nama Baru (kosongkan jika tidak ingin diubah):")
-        age = simpledialog.askstring("Input", "Masukkan Umur Baru (kosongkan jika tidak ingin diubah):")
-        gender = simpledialog.askstring("Input", "Masukkan Jenis Kelamin Baru (kosongkan jika tidak ingin diubah):")
+    def load_patients(self):
+        patients = []
+        try:
+            with open(FILE_NAME, mode='r') as file:
+                reader = csv.reader(file)
+                for row in reader:
+                    if row:
+                        patients.append(Patient(row[0], int(row[1]), row[2]))
+        except FileNotFoundError:
+            pass
+        return patients
 
-        if name:
-            patients[patient_id - 1][0] = name
-        if age:
-            patients[patient_id - 1][1] = age
-        if gender:
-            patients[patient_id - 1][2] = gender
-        
+    def save_patients(self):
         with open(FILE_NAME, mode='w', newline='') as file:
             writer = csv.writer(file)
-            writer.writerows(patients)
-        
-        messagebox.showinfo("Sukses", "Informasi pasien berhasil diperbarui")
-    else:
-        messagebox.showerror("Error", "ID Pasien tidak valid")
+            for patient in self.patients:
+                writer.writerow([patient.name, patient.age, patient.gender])
 
-# Fungsi untuk menghapus data pasien dari sistem
-def delete_patient():
-    patient_id = simpledialog.askinteger("Input", "Masukkan ID Pasien yang ingin dihapus:")
+    def add_patient(self, patient):
+        self.patients.append(patient)
+        self.save_patients()
+
+    def get_patients(self):
+        return self.patients
+
+    def update_patient(self, index, name=None, age=None, gender=None):
+        if 0 <= index < len(self.patients):
+            if name:
+                self.patients[index].name = name
+            if age:
+                self.patients[index].age = age
+            if gender:
+                self.patients[index].gender = gender
+            self.save_patients()
+            return True
+        return False
+
+    def delete_patient(self, index):
+        if 0 <= index < len(self.patients):
+            del self.patients[index]
+            self.save_patients()
+            return True
+        return False
+
+def main_menu():
+    print("\n=== Manajemen Pasien Rumah Sakit ===")
+    print("1. Tambah Pasien")
+    print("2. Lihat Pasien")
+    print("3. Update Pasien")
+    print("4. Hapus Pasien")
+    print("5. Keluar")
+
+def add_patient_menu(hospital):
+    name = input("Masukkan Nama Pasien: ")
+    age = input("Masukkan Umur Pasien: ")
+    gender = input("Masukkan Jenis Kelamin Pasien (L/P): ")
     
-    with open(FILE_NAME, mode='r') as file:
-        reader = csv.reader(file)
-        patients = list(reader)
-    
-    if 0 < patient_id <= len(patients):
-        del patients[patient_id - 1]
-        
-        with open(FILE_NAME, mode='w', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerows(patients)
-        
-        messagebox.showinfo("Sukses", "Pasien berhasil dihapus")
+    if name and age.isdigit() and gender in ['L', 'P']:
+        patient = Patient(name, int(age), gender)
+        hospital.add_patient(patient)
+        print("Pasien berhasil ditambahkan.")
     else:
-        messagebox.showerror("Error", "ID Pasien tidak valid")
+        print("Informasi pasien tidak valid.")
 
-# Pengaturan antarmuka Tkinter
-root = tk.Tk()
-root.title("Manajemen Pasien Rumah Sakit")
+def view_patients_menu(hospital):
+    patients = hospital.get_patients()
+    if patients:
+        for i, patient in enumerate(patients):
+            print(f"{i + 1}. {patient}")
+    else:
+        print("Tidak ada pasien yang terdaftar.")
 
-tk.Button(root, text="Tambah Pasien", command=add_patient).pack(pady=5)
-tk.Button(root, text="Lihat Pasien", command=view_patients).pack(pady=5)
-tk.Button(root, text="Update Pasien", command=update_patient).pack(pady=5)
-tk.Button(root, text="Hapus Pasien", command=delete_patient).pack(pady=5)
+def update_patient_menu(hospital):
+    view_patients_menu(hospital)
+    try:
+        patient_id = int(input("Masukkan ID Pasien yang ingin diperbarui: ")) - 1
+        name = input("Masukkan Nama Baru (kosongkan jika tidak ingin diubah): ")
+        age = input("Masukkan Umur Baru (kosongkan jika tidak ingin diubah): ")
+        gender = input("Masukkan Jenis Kelamin Baru (kosongkan jika tidak ingin diubah): ")
 
-root.mainloop()
+        if not age.isdigit() and age:
+            print("Umur tidak valid.")
+            return
+
+        if hospital.update_patient(patient_id, name or None, int(age) if age else None, gender or None):
+            print("Informasi pasien berhasil diperbarui.")
+        else:
+            print("ID Pasien tidak valid.")
+    except ValueError:
+        print("ID Pasien tidak valid.")
+
+def delete_patient_menu(hospital):
+    view_patients_menu(hospital)
+    try:
+        patient_id = int(input("Masukkan ID Pasien yang ingin dihapus: ")) - 1
+        if hospital.delete_patient(patient_id):
+            print("Pasien berhasil dihapus.")
+        else:
+            print("ID Pasien tidak valid.")
+    except ValueError:
+        print("ID Pasien tidak valid.")
+
+def main():
+    hospital = HospitalManagement()
+    while True:
+        main_menu()
+        choice = input("Pilih menu: ")
+        if choice == '1':
+            add_patient_menu(hospital)
+        elif choice == '2':
+            view_patients_menu(hospital)
+        elif choice == '3':
+            update_patient_menu(hospital)
+        elif choice == '4':
+            delete_patient_menu(hospital)
+        elif choice == '5':
+            print("Keluar dari program.")
+            break
+        else:
+            print("Pilihan tidak valid. Silakan coba lagi.")
+
+if __name__ == "__main__":
+    main()
