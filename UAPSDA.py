@@ -1,6 +1,6 @@
 import csv
 
-FILE_NAME = 'patients.csv'
+FILE_NAME = 'Data_pasien.csv'
 
 class Patient:
     def __init__(self, name, age, gender):
@@ -37,9 +37,6 @@ class HospitalManagement:
         self.patients.append(patient)
         self.save_patients()
 
-    def get_patients(self):
-        return self.patients
-
     def update_patient(self, index, name=None, age=None, gender=None):
         if 0 <= index < len(self.patients):
             if name:
@@ -59,13 +56,18 @@ class HospitalManagement:
             return True
         return False
 
+    def search_patient(self, name):
+        results = [patient for patient in self.patients if name.lower() in patient.name.lower()]
+        return results
+
 def main_menu():
     print("\n=== Manajemen Pasien Rumah Sakit ===")
     print("1. Tambah Pasien")
     print("2. Lihat Pasien")
     print("3. Update Pasien")
     print("4. Hapus Pasien")
-    print("5. Keluar")
+    print("5. Cari Pasien")
+    print("6. Keluar")
 
 def add_patient_menu(hospital):
     name = input("Masukkan Nama Pasien: ")
@@ -117,6 +119,16 @@ def delete_patient_menu(hospital):
     except ValueError:
         print("ID Pasien tidak valid.")
 
+def search_patient_menu(hospital):
+    name = input("Masukkan Nama Pasien yang ingin dicari: ")
+    results = hospital.search_patient(name)
+    if results:
+        print("Hasil pencarian:")
+        for patient in results:
+            print(patient)
+    else:
+        print("Tidak ada pasien dengan nama tersebut.")
+
 def main():
     hospital = HospitalManagement()
     while True:
@@ -131,6 +143,8 @@ def main():
         elif choice == '4':
             delete_patient_menu(hospital)
         elif choice == '5':
+            search_patient_menu(hospital)
+        elif choice == '6':
             print("Keluar dari program.")
             break
         else:
